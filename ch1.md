@@ -73,20 +73,88 @@ my_fist_pkg/
 
 # Nodes 
 
-A node is computing unit, a program that performs a specific work.
+A node is computing unit, a program that performs a specific work. Nodes can communicate with other nodes within the same process, in a different process, or on a different machine. Nodes are typically the unit of computation in a ROS graph; each node shoud do one logical thing.
+
+# Messages
+Messages are a way for a ROS 2 node to send data on the network to other ROS nodes, with no response expected.
+Messages are described and defined in .msg files in the msg/ directory of a ROS package. 
+
+### Example
+
+```bash
+int32[] unbounded_integer_array
+int32[5] five_integers_array
+int32[<=5] up_to_five_integers_array
+
+string string_of_unbounded_size
+string<=10 up_to_ten_characters_string
+
+string[<=5] up_to_five_unbounded_strings
+string<=10[] unbounded_array_of_strings_up_to_ten_characters_each
+string<=10[<=5] up_to_five_strings_up_to_ten_characters_each
+```
+
+
 
 # Topics - Asynchronous Communication
 
-A topic is a unidirectional channel of communication for data stream.
+A topic should be used for continuous data streams, like sensor data, robot state, etc.
+
+ROS 2 is a strongly-typed, anonymous publish/subscribe system.
+
+## Publish/Subscribe
+
+A publish/subscribe system is one in which there are producers of data (publishers) and consumers of data (subscribers). They contact each other throught a topic. There may be zero or more publishers and zero or more subscribers on any particular topic. When data is published to the topic by any of the publishers, all subscribers in the system will receive the data.
+
+## Anonymous
+When a subscriber gets a piece of data, it doesn't generally know or care which publisher originally sent it.
+
+## Strongly-typed
+The types of each field in a ROS message are typed, and that type is enforced at various levels.
+The semantic of each field are well-defined. There is no automated mechanism to ensure this, but all of the core ROS types have strong semantics associated with them. For instance, the IMU message contains a 3-dimensional vector for the measured angular velocity, and each of the dimensions is specified to be in radians/second. 
 
 # Services - Synchronous Communication
 
-Services provide request-response operations.
+Services provide request/response communication, where the cliente (requester) is waiting for the server (responder) to make a short computation and return a result.
+
+Services are described and defined in `.srv` file in the `srv/` directory of a ROS package. You cannot embed another service inside of a service.
+
+### Example
+Service that takes in a string and return a string:
+```bash
+string str
+---
+string str
+```
+
+```bash
+# request constants
+int8 FOO=1
+int8 BAR=2
+# request fields
+int8 foobar
+another_pkg/AnotherMessage msg
+---
+# response constants
+uint32 SECRET=123456
+# response fields
+another_pkg/YetAnotherMessage val
+CustomMessageDefinedInThisPackage value
+uint32 an_integer
+```
 
 # Actions - Large operations
 
-Actions are for long time tasks, with feedback and cancellation.
+Actions are for long-running request/response communication, where the action client (requester) is waiting for the action server (responser) to take some action and return a result. They provide feedback and can be interrupted (cancellation).
 
+Action definitions have the following form:
+```bash
+<request_type> <request_fieldname>
+---
+<response_type> <response_fieldname>
+---
+<feedback_type> <feedback_fieldname>
+```
 # 4. Command Line Tools
 
 ```bash
@@ -237,3 +305,81 @@ def generate_launch_description():
 ```
 ## Launch with args
 
+```python
+from launch import LaunchDescription
+from launch.actions import DecalreLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+
+def generate_launch_description():
+     return LaunchDescription([
+          DeclareLaunchArgument(
+               'node_name', 
+               default_value='default_node',
+               description='Nombre del nodo'
+          ),
+          Node(
+               package='my_package',
+               executable='my_node',
+               name=LaunchConfiguration('node_name')
+          )
+     ])
+```
+
+# 8. Parameters system
+
+## Definition and usage of parameters
+
+
+
+# 10. C++ Package Struct
+
+```bash
+# Create Workspace
+mkdir -p ~/ros2_cpp_ws/src
+cd ~/ros2_cpp_ws/src
+
+# Create basic C++ package
+ros2 pkg create cpp_basics \ 
+     --build-type ament_cmake \
+     --dependencies rclcpp std_msgs
+
+# Estructura generada:
+cpp_basics/
+├── CMakeLists.txt
+├── include/cpp_basics/
+├── package.xml
+└── src/
+```
+
+### CMakeLists.txt minimal
+
+```bash
+cmake_minimum_required(VERSION 3.8)
+project(cpp_basics)
+
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+
+# Find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+
+# Ejecutable 1
+add_executable(minimal_publisher src/minimal_publisher.cpp)
+ament_target_dependencies(minimal_publisher rclcpp std_msgs)
+
+# Instalación
+install(TARGETS
+  minimal_publisher
+  DESTINATION lib/${PROJECT_NAME})
+
+ament_package()
+```
+
+# 11. Basic examples
+
+See ex/src/minimal_publisher.cpp
