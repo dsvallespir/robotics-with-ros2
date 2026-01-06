@@ -13,6 +13,7 @@ find_package(ament_cmake REQUIRED)
 
 # Buscar rclcpp
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -30,13 +31,27 @@ endif()
 
 add_executable(minimal_publisher src/minimal_publisher.cpp)
 # Especificar las dependencias
-ament_target_dependencies(minimal_publisher
-  rclcpp
+target_link_libraries(minimal_publisher PUBLIC
+  ${std_msgs_TARGETS}
+  rclcpp::rclcpp
 )
 add_executable(minimal_subscriber src/minimal_subscriber.cpp)
 # Especificar las dependencias
-ament_target_dependencies(minimal_subscriber
-  rclcpp
+target_link_libraries(minimal_subscriber PUBLIC
+  ${std_msgs_TARGETS}
+  rclcpp::rclcpp
 )
 
+# ===== INSTALACIÓN =====
+install(TARGETS minimal_publisher minimal_subscriber
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Exportar dependencias (opcional pero recomendado)
+ament_export_dependencies(
+  rclcpp
+  std_msgs
+)
+
+# Generar el paquete
 ament_package()
